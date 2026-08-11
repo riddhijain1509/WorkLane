@@ -1,0 +1,24 @@
+{
+  "name": "worklane",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Distributed workflow automation platform with webhook triggers, Kafka dispatching, and worker-executed integration steps.",
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:dashboard": "npm --workspace apps/dashboard run dev",
+    "dev:control": "npm --workspace services/control-plane run dev",
+    "dev:ingestion": "npm --workspace services/ingestion run dev",
+    "dev:dispatcher": "npm --workspace services/dispatcher run dev",
+    "dev:executor": "npm --workspace services/executor run dev",
+    "db:generate": "npm --workspace packages/db run db:generate",
+    "db:migrate": "npm --workspace packages/db run db:migrate",
+    "db:seed": "npm --workspace packages/db run db:seed"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
