@@ -17,6 +17,22 @@ The project is intentionally built as a monorepo so each part of the system has 
 - HTTP request step support.
 - Retro-styled landing page and dashboard UI.
 
+## Screenshots and Demo
+
+### Landing Page
+
+![WorkLane demo](docs/assets/worklane-demo.gif)
+
+### Workflow Dashboard
+
+![WorkLane workflow dashboard](docs/assets/worklane-dashboard.png)
+
+### Workflow Builder
+
+![WorkLane workflow builder](docs/assets/worklane-builder.png)
+
+
+
 ## Architecture
 
 ```txt
@@ -307,4 +323,3 @@ POST /webhooks/:workflowId
    - Manual: click the run workflow button.
    - Schedule: wait for the scheduler interval.
 6. Watch execution history update on the workflow detail page.
-
