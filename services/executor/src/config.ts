@@ -37,6 +37,11 @@ export const config = {
     from: process.env.SMTP_FROM ?? "WorkLane <no-reply@worklane.local>",
     timeoutMs: Number(process.env.SMTP_TIMEOUT_MS ?? 15000),
   },
+  resend: {
+    apiKey: process.env.RESEND_API_KEY,
+    from: process.env.RESEND_FROM ?? process.env.SMTP_FROM ?? "WorkLane <onboarding@resend.dev>",
+    timeoutMs: Number(process.env.RESEND_TIMEOUT_MS ?? 15000),
+  },
 };
 
 function buildKafkaSsl(): boolean | ConnectionOptions {

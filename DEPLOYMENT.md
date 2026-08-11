@@ -274,7 +274,15 @@ DISPATCHER_BATCH_SIZE="10"
 SCHEDULER_POLL_INTERVAL_MS="5000"
 ```
 
-Optional SMTP variables for `email.send`:
+Recommended email variables for `email.send`:
+
+```env
+RESEND_API_KEY="your-resend-api-key"
+RESEND_FROM="WorkLane <onboarding@resend.dev>"
+RESEND_TIMEOUT_MS="15000"
+```
+
+SMTP fallback variables for `email.send`:
 
 ```env
 SMTP_HOST="smtp.gmail.com"
