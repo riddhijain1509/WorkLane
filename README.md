@@ -52,6 +52,7 @@ npm run dev:dashboard
 ### Triggers
 
 - `webhook.received`: starts a workflow when an HTTP webhook is received.
+- `manual.run`: starts a workflow from the WorkLane dashboard.
 
 ### Steps
 
@@ -99,6 +100,7 @@ POST /api/workflows
 GET  /api/workflows/:workflowId
 GET  /api/workflows/:workflowId/executions
 GET  /api/workflows/:workflowId/executions/:executionId
+POST /api/workflows/:workflowId/manual-runs
 ```
 
 ## Ingestion Service

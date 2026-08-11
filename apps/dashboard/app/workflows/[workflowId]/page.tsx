@@ -2,10 +2,16 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Copy, RefreshCw, Send } from "lucide-react";
+import { Copy, Play, RefreshCw, Send } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { redirectToSignInIfNeeded } from "@/lib/auth-redirect";
-import { INGESTION_URL, Workflow, WorkflowExecution, apiFetch } from "@/lib/api";
+import {
+  INGESTION_URL,
+  Workflow,
+  WorkflowExecution,
+  apiFetch,
+  getWorkflowTriggerProviderId,
+} from "@/lib/api";
 
 export default function WorkflowDetailPage() {
   const router = useRouter();
@@ -17,6 +23,7 @@ export default function WorkflowDetailPage() {
   const [error, setError] = useState("");
 
   const webhookUrl = useMemo(() => `${INGESTION_URL}/webhooks/${workflowId}`, [workflowId]);
+  const triggerProviderId = getWorkflowTriggerProviderId(workflow);
 
   async function load() {
     setError("");
@@ -43,15 +50,24 @@ export default function WorkflowDetailPage() {
   async function sendTestWebhook() {
     setError("");
     try {
-      const response = await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: testPayload,
-      });
+      if (triggerProviderId === "manual.run") {
+        await apiFetch(`/api/workflows/${workflowId}/manual-runs`, {
+          method: "POST",
+          body: JSON.stringify({
+            payload: JSON.parse(testPayload),
+          }),
+        });
+      } else {
+        const response = await fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: testPayload,
+        });
 
-      if (!response.ok) {
-        const body = await response.json().catch(() => undefined);
-        throw new Error(body?.message ?? "Webhook failed");
+        if (!response.ok) {
+          const body = await response.json().catch(() => undefined);
+          throw new Error(body?.message ?? "Webhook failed");
+        }
       }
 
       setTimeout(load, 800);
@@ -78,14 +94,23 @@ export default function WorkflowDetailPage() {
 
       <div className="two-col">
         <section className="panel stack">
-          <div className="card-row">
-            <h2>Webhook</h2>
-            <button className="btn secondary" onClick={() => navigator.clipboard.writeText(webhookUrl)}>
-              <Copy size={16} />
-              Copy
-            </button>
-          </div>
-          <div className="code">{webhookUrl}</div>
+          {triggerProviderId === "manual.run" ? (
+            <>
+              <h2>Manual trigger</h2>
+              <p className="muted">Start this workflow from WorkLane using the payload below.</p>
+            </>
+          ) : (
+            <>
+              <div className="card-row">
+                <h2>Webhook</h2>
+                <button className="btn secondary" onClick={() => navigator.clipboard.writeText(webhookUrl)}>
+                  <Copy size={16} />
+                  Copy
+                </button>
+              </div>
+              <div className="code">{webhookUrl}</div>
+            </>
+          )}
 
           <h2>Steps</h2>
           <div className="steps">
@@ -102,15 +127,15 @@ export default function WorkflowDetailPage() {
             ))}
           </div>
 
-          <h2>Test payload</h2>
+          <h2>{triggerProviderId === "manual.run" ? "Run payload" : "Test payload"}</h2>
           <textarea
             className="textarea"
             value={testPayload}
             onChange={(event) => setTestPayload(event.target.value)}
           />
           <button className="btn" onClick={sendTestWebhook}>
-            <Send size={16} />
-            Send test webhook
+            {triggerProviderId === "manual.run" ? <Play size={16} /> : <Send size={16} />}
+            {triggerProviderId === "manual.run" ? "Run workflow" : "Send test webhook"}
           </button>
         </section>
 

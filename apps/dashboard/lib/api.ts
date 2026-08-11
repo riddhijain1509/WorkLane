@@ -25,7 +25,9 @@ export type Workflow = {
   description?: string;
   status: string;
   createdAt: string;
+  triggerId?: string;
   trigger?: {
+    triggerProviderId?: string;
     provider: Provider;
     config: Record<string, unknown>;
   };
@@ -34,6 +36,10 @@ export type Workflow = {
     executions: number;
   };
 };
+
+export function getWorkflowTriggerProviderId(workflow?: Workflow | null) {
+  return workflow?.trigger?.provider?.id ?? workflow?.trigger?.triggerProviderId ?? workflow?.triggerId;
+}
 
 export type WorkflowExecution = {
   id: string;

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { Prisma, prisma, WorkflowStatus } from "@worklane/db";
 import { AuthenticatedRequest, requireAuth } from "../lib/auth";
+import { QueueExecutionError, queueWorkflowExecution } from "../lib/executions";
 import { sendZodError } from "../lib/http";
 
 export const workflowRouter = Router();
@@ -21,6 +22,10 @@ const createWorkflowSchema = z.object({
   triggerProviderId: z.string().min(1),
   triggerConfig: z.record(z.unknown()).default({}),
   steps: z.array(workflowStepSchema).min(1),
+});
+
+const manualRunSchema = z.object({
+  payload: z.record(z.unknown()).default({}),
 });
 
 workflowRouter.get("/", async (req: AuthenticatedRequest, res, next) => {
@@ -166,6 +171,51 @@ workflowRouter.get(
     }
   },
 );
+
+workflowRouter.post("/:workflowId/manual-runs", async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const parsed = manualRunSchema.safeParse(req.body);
+    if (!parsed.success) {
+      sendZodError(res, parsed.error);
+      return;
+    }
+
+    const workflow = await prisma.workflow.findFirst({
+      where: {
+        id: req.params.workflowId,
+        userId: req.userId,
+        status: WorkflowStatus.ACTIVE,
+        trigger: {
+          triggerProviderId: "manual.run",
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!workflow) {
+      res.status(404).json({ message: "Active manual workflow not found" });
+      return;
+    }
+
+    const execution = await queueWorkflowExecution({
+      workflowId: workflow.id,
+      triggerPayload: parsed.data.payload as Prisma.InputJsonValue,
+    });
+
+    res.status(202).json({
+      message: "Manual run queued",
+      executionId: execution.id,
+      queuedStepPosition: execution.outboxEvents[0]?.stepPosition ?? 0,
+    });
+  } catch (error) {
+    if (error instanceof QueueExecutionError) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+
+    next(error);
+  }
+});
 
 workflowRouter.post("/", async (req: AuthenticatedRequest, res, next) => {
   try {
