@@ -4,6 +4,10 @@ WorkLane is a distributed workflow automation platform inspired by tools like Za
 
 The project is intentionally built as a monorepo so each part of the system has a clear responsibility and can later be scaled or extended independently.
 
+## Live Demo
+
+[Open WorkLane](https://worklane-dashboard.onrender.com)
+
 ## Features
 
 - User signup, login, logout, and session-based authentication.
