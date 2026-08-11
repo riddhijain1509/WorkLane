@@ -114,6 +114,26 @@ Useful script:
 npm run dev:dispatcher
 ```
 
+## Executor Service
+
+The executor service lives in `services/executor`.
+
+It consumes Kafka workflow events, runs the matching `ExecutionStep`, marks the step as succeeded or failed, and queues the next step through `ExecutionOutbox` when the workflow has more work.
+
+Supported step providers:
+
+```txt
+log.message
+email.send
+http.request
+```
+
+Useful script:
+
+```txt
+npm run dev:executor
+```
+
 ## Local Kafka
 
 Kafka can be started locally with Docker Compose:

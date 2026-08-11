@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Kafka } from "kafkajs";
+import { Kafka, Partitioners } from "kafkajs";
 import { OutboxStatus, prisma } from "@worklane/db";
 import { config } from "./config";
 
@@ -8,10 +8,14 @@ const kafka = new Kafka({
   brokers: config.kafkaBrokers,
 });
 
-const producer = kafka.producer();
+const admin = kafka.admin();
+const producer = kafka.producer({
+  createPartitioner: Partitioners.LegacyPartitioner,
+});
 let shuttingDown = false;
 
 async function main() {
+  await ensureTopic();
   await producer.connect();
   console.log(`Dispatcher connected to Kafka topic ${config.kafkaTopic}`);
 
@@ -22,6 +26,25 @@ async function main() {
 
   await producer.disconnect();
   await prisma.$disconnect();
+}
+
+async function ensureTopic() {
+  await admin.connect();
+
+  try {
+    await admin.createTopics({
+      waitForLeaders: true,
+      topics: [
+        {
+          topic: config.kafkaTopic,
+          numPartitions: 3,
+          replicationFactor: 1,
+        },
+      ],
+    });
+  } finally {
+    await admin.disconnect();
+  }
 }
 
 async function dispatchBatch() {
@@ -100,6 +123,7 @@ process.on("SIGTERM", () => requestShutdown("SIGTERM"));
 
 main().catch(async (error) => {
   console.error(error);
+  await admin.disconnect().catch(() => undefined);
   await producer.disconnect().catch(() => undefined);
   await prisma.$disconnect().catch(() => undefined);
   process.exit(1);
