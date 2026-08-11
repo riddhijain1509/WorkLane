@@ -51,7 +51,59 @@ a {
 
 .shell {
   position: relative;
+  overflow: hidden;
   min-height: 100vh;
+}
+
+.shell > :not(.app-color-grid) {
+  position: relative;
+}
+
+.app-color-grid {
+  position: absolute;
+  inset: 80px 0 auto;
+  z-index: 0;
+  display: grid;
+  grid-template-columns: repeat(16, minmax(34px, 1fr));
+  grid-auto-rows: 52px;
+  min-height: calc(100vh - 80px);
+  opacity: 0.78;
+  pointer-events: none;
+  mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.72) 46%, transparent 100%);
+}
+
+.app-color-grid span {
+  border-right: 1px solid rgba(22, 32, 51, 0.055);
+  border-bottom: 1px solid rgba(22, 32, 51, 0.055);
+  background: transparent;
+  animation: color-cell 7.5s ease-in-out infinite;
+  animation-delay: var(--cell-delay);
+}
+
+.app-color-grid span:nth-child(8n + 1) {
+  --cell-color: rgba(183, 247, 212, 0.62);
+}
+
+.app-color-grid span:nth-child(8n + 2) {
+  --cell-color: rgba(199, 221, 255, 0.56);
+}
+
+.app-color-grid span:nth-child(8n + 3) {
+  --cell-color: rgba(255, 228, 168, 0.58);
+}
+
+.app-color-grid span:nth-child(8n + 4) {
+  --cell-color: rgba(255, 198, 217, 0.48);
+}
+
+.app-color-grid span:nth-child(8n + 5) {
+  --cell-color: rgba(217, 204, 255, 0.46);
+}
+
+.app-color-grid span:nth-child(8n + 6),
+.app-color-grid span:nth-child(8n + 7),
+.app-color-grid span:nth-child(8n) {
+  --cell-color: transparent;
 }
 
 .topbar {
@@ -173,6 +225,125 @@ h3 {
 
 .card {
   padding: 16px;
+}
+
+.workflow-card {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(22, 32, 51, 0.32);
+  background:
+    linear-gradient(135deg, rgba(255, 250, 240, 0.94), rgba(255, 255, 255, 0.84)),
+    linear-gradient(90deg, rgba(183, 247, 212, 0.28), rgba(199, 221, 255, 0.2), transparent);
+  box-shadow: 7px 7px 0 rgba(22, 32, 51, 0.08);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.workflow-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 7px;
+  background: linear-gradient(#b7f7d4, #c7ddff 42%, #ffe4a8 72%, #ffc6d9);
+}
+
+.workflow-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent, rgba(15, 118, 110, 0.08), transparent),
+    repeating-linear-gradient(90deg, transparent 0 28px, rgba(22, 32, 51, 0.035) 28px 29px);
+  opacity: 0;
+  transform: translateX(-45%);
+  transition: opacity 180ms ease;
+  animation: workflow-card-scan 7s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.workflow-card:hover {
+  border-color: #162033;
+  box-shadow: 11px 11px 0 rgba(22, 32, 51, 0.12);
+  transform: translate(-2px, -2px);
+}
+
+.workflow-card:hover::after {
+  opacity: 1;
+}
+
+.workflow-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.workflow-stats > div {
+  border: 1px solid rgba(22, 32, 51, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 12px;
+}
+
+.builder-panel,
+.template-panel {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(22, 32, 51, 0.34);
+  background:
+    linear-gradient(135deg, rgba(255, 250, 240, 0.94), rgba(255, 255, 255, 0.76)),
+    repeating-linear-gradient(90deg, transparent 0 30px, rgba(22, 32, 51, 0.035) 30px 31px),
+    repeating-linear-gradient(0deg, transparent 0 30px, rgba(22, 32, 51, 0.03) 30px 31px);
+  box-shadow: 9px 9px 0 rgba(22, 32, 51, 0.1);
+}
+
+.builder-panel::before,
+.template-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 7px;
+  background: linear-gradient(90deg, #b7f7d4, #c7ddff 34%, #ffe4a8 62%, #ffc6d9);
+}
+
+.template-panel::before {
+  background: linear-gradient(90deg, #ffe4a8, #ffc6d9 45%, #d9ccff);
+}
+
+.builder-panel > *,
+.template-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.step-builder-card {
+  position: relative;
+  border-color: rgba(22, 32, 51, 0.28);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 250, 240, 0.78)),
+    linear-gradient(90deg, rgba(199, 221, 255, 0.24), transparent 50%);
+  box-shadow: 5px 5px 0 rgba(22, 32, 51, 0.07);
+}
+
+.step-builder-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  border-radius: 8px 0 0 8px;
+  background: #c7ddff;
+}
+
+.builder-panel .input,
+.builder-panel .textarea,
+.builder-panel .select,
+.template-panel .code {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(22, 32, 51, 0.2);
+}
+
+.template-panel .code {
+  box-shadow: 3px 3px 0 rgba(22, 32, 51, 0.05);
 }
 
 .card-row {
@@ -1097,6 +1268,18 @@ h3 {
   68%,
   100% {
     transform: translateX(110%);
+  }
+}
+
+@keyframes workflow-card-scan {
+  0%,
+  64% {
+    transform: translateX(-55%);
+  }
+
+  86%,
+  100% {
+    transform: translateX(55%);
   }
 }
 

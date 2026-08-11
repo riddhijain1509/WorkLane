@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { LogOut, Route } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 
+const colorCells = Array.from({ length: 96 }, (_, index) => index);
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
@@ -15,6 +17,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="shell">
+      <div className="app-color-grid" aria-hidden="true">
+        {colorCells.map((cell) => (
+          <span
+            key={cell}
+            style={
+              {
+                "--cell-delay": `${(cell % 24) * 0.22}s`,
+              } as React.CSSProperties
+            }
+          />
+        ))}
+      </div>
       <header className="topbar">
         <div className="topbar-inner">
           <Link className="brand" href="/dashboard">

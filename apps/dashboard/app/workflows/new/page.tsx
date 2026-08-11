@@ -116,7 +116,7 @@ export default function NewWorkflowPage() {
       </div>
 
       <form className="two-col" onSubmit={submit}>
-        <section className="panel stack">
+        <section className="panel stack builder-panel">
           <div className="field">
             <label>Workflow name</label>
             <input className="input" value={name} onChange={(event) => setName(event.target.value)} />
@@ -175,7 +175,7 @@ export default function NewWorkflowPage() {
           <h2>Steps</h2>
           <div className="steps">
             {stepDrafts.map((step, index) => (
-              <div className="card" key={index}>
+              <div className="card step-builder-card" key={index}>
                 <div className="card-row">
                   <strong>Step {index + 1}</strong>
                   <button
@@ -256,7 +256,7 @@ export default function NewWorkflowPage() {
           </button>
         </section>
 
-        <aside className="panel">
+        <aside className="panel template-panel">
           <h2>Template data</h2>
           <div className="stack">
             <p className="muted">

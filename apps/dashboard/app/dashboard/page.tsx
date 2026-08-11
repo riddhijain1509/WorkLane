@@ -60,7 +60,7 @@ export default function DashboardPage() {
           const isManual = triggerProviderId === "manual.run";
 
           return (
-            <article className="card" key={workflow.id}>
+            <article className="card workflow-card" key={workflow.id}>
               <div className="card-row">
                 <div>
                   <h3>{workflow.name}</h3>
@@ -68,7 +68,7 @@ export default function DashboardPage() {
                 </div>
                 <span className={`status ${workflow.status}`}>{workflow.status}</span>
               </div>
-              <div className="grid" style={{ marginTop: 14 }}>
+              <div className="grid workflow-stats" style={{ marginTop: 14 }}>
                 <div>
                   <p className="muted">
                     <Radio size={14} /> Trigger
