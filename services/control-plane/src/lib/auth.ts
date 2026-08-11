@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import { CookieOptions, NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
 export type AuthenticatedRequest = Request & {
@@ -15,15 +15,13 @@ export function createSessionToken(userId: string) {
 
 export function setSessionCookie(res: Response, token: string) {
   res.cookie(cookieName, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    ...sessionCookieOptions(),
     maxAge: 1000 * 60 * 60 * 24 * 30,
   });
 }
 
 export function clearSessionCookie(res: Response) {
-  res.clearCookie(cookieName);
+  res.clearCookie(cookieName, sessionCookieOptions());
 }
 
 export function requireAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -55,4 +53,15 @@ function getJwtSecret() {
   }
 
   return secret;
+}
+
+function sessionCookieOptions(): CookieOptions {
+  const isProduction = process.env.NODE_ENV === "production";
+
+  return {
+    httpOnly: true,
+    sameSite: isProduction ? "none" : "lax",
+    secure: isProduction,
+    path: "/",
+  };
 }
