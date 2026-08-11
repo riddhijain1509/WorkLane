@@ -86,7 +86,7 @@ Render service type: **Web Service**
 Build command:
 
 ```bash
-npm install && npm run db:generate && npm --workspace services/control-plane run build
+npm install && npm run db:generate && npm --workspace packages/db run build && npm run db:deploy && npm --workspace services/control-plane run build
 ```
 
 Pre-deploy command:
@@ -107,9 +107,10 @@ Environment variables:
 DATABASE_URL="your-managed-postgres-url"
 JWT_SECRET="a-long-random-production-secret"
 DASHBOARD_ORIGIN="https://your-dashboard-url"
+WORKER_HOST_URL="https://worklane-worker-host.onrender.com"
 ```
 
-Add the shared Kafka variables if you want this service to share the same environment group, although control-plane does not currently connect to Kafka directly.
+`WORKER_HOST_URL` lets manual runs wake the free-tier worker host when Render has put it to sleep.
 
 ## Ingestion Service
 
@@ -118,7 +119,7 @@ Render service type: **Web Service**
 Build command:
 
 ```bash
-npm install && npm run db:generate && npm --workspace services/ingestion run build
+npm install && npm run db:generate && npm --workspace packages/db run build && npm --workspace services/ingestion run build
 ```
 
 Start command:
@@ -131,7 +132,10 @@ Environment variables:
 
 ```env
 DATABASE_URL="your-managed-postgres-url"
+WORKER_HOST_URL="https://worklane-worker-host.onrender.com"
 ```
+
+`WORKER_HOST_URL` lets webhook runs wake the free-tier worker host when Render has put it to sleep.
 
 ## Dispatcher Worker
 

@@ -2,6 +2,7 @@ import "dotenv/config";
 import cors from "cors";
 import express from "express";
 import { prisma, WorkflowStatus } from "@worklane/db";
+import { wakeWorkerHost } from "./worker-host";
 
 const app = express();
 const port = Number(process.env.PORT ?? process.env.INGESTION_PORT ?? 4001);
@@ -76,6 +77,7 @@ app.post("/webhooks/:workflowId", async (req, res, next) => {
       executionId: execution.id,
       queuedStepPosition: execution.outboxEvents[0]?.stepPosition ?? 0,
     });
+    wakeWorkerHost();
   } catch (error) {
     next(error);
   }

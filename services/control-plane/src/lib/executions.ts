@@ -1,4 +1,5 @@
 import { Prisma, prisma } from "@worklane/db";
+import { wakeWorkerHost } from "./worker-host";
 
 type QueueWorkflowExecutionParams = {
   workflowId: string;
@@ -30,7 +31,7 @@ export async function queueWorkflowExecution({
     throw new QueueExecutionError("Workflow has no steps to execute");
   }
 
-  return prisma.workflowExecution.create({
+  const execution = await prisma.workflowExecution.create({
     data: {
       workflowId: workflow.id,
       triggerPayload,
@@ -54,6 +55,10 @@ export async function queueWorkflowExecution({
       outboxEvents: true,
     },
   });
+
+  wakeWorkerHost();
+
+  return execution;
 }
 
 export class QueueExecutionError extends Error {}
