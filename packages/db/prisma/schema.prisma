@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum WorkflowStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum ExecutionStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum StepExecutionStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  SKIPPED
+}
+
+enum OutboxStatus {
+  PENDING
+  DISPATCHED
+  FAILED
+}
+
+model User {
+  id           String     @id @default(uuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  workflows    Workflow[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Workflow {
+  id          String              @id @default(uuid())
+  name        String
+  description String?
+  status      WorkflowStatus      @default(DRAFT)
+  userId      String
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trigger     WorkflowTrigger?
+  steps       WorkflowStep[]
+  executions  WorkflowExecution[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model TriggerProvider {
+  id          String            @id
+  name        String
+  description String?
+  iconUrl     String?
+  triggers    WorkflowTrigger[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model StepProvider {
+  id          String         @id
+  name        String
+  description String?
+  iconUrl     String?
+  steps       WorkflowStep[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model WorkflowTrigger {
+  id                String          @id @default(uuid())
+  workflowId        String          @unique
+  triggerProviderId String
+  config            Json            @default("{}")
+  workflow          Workflow        @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  provider          TriggerProvider @relation(fields: [triggerProviderId], references: [id])
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([triggerProviderId])
+}
+
+model WorkflowStep {
+  id             String          @id @default(uuid())
+  workflowId     String
+  stepProviderId String
+  name           String?
+  config         Json            @default("{}")
+  position       Int
+  workflow       Workflow        @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  provider       StepProvider    @relation(fields: [stepProviderId], references: [id])
+  stepExecutions ExecutionStep[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([workflowId, position])
+  @@index([stepProviderId])
+}
+
+model WorkflowExecution {
+  id             String             @id @default(uuid())
+  workflowId     String
+  status         ExecutionStatus    @default(QUEUED)
+  triggerPayload Json               @default("{}")
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  error          String?
+  workflow       Workflow           @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  steps          ExecutionStep[]
+  outboxEvents   ExecutionOutbox[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([workflowId])
+  @@index([status])
+}
+
+model ExecutionStep {
+  id                  String              @id @default(uuid())
+  workflowExecutionId String
+  workflowStepId      String
+  position            Int
+  status              StepExecutionStatus @default(QUEUED)
+  input               Json                @default("{}")
+  output              Json                @default("{}")
+  error               String?
+  startedAt           DateTime?
+  finishedAt          DateTime?
+  execution           WorkflowExecution  @relation(fields: [workflowExecutionId], references: [id], onDelete: Cascade)
+  workflowStep        WorkflowStep        @relation(fields: [workflowStepId], references: [id])
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@unique([workflowExecutionId, position])
+  @@index([workflowStepId])
+  @@index([status])
+}
+
+model ExecutionOutbox {
+  id                  String            @id @default(uuid())
+  workflowExecutionId String
+  stepPosition        Int               @default(0)
+  status              OutboxStatus      @default(PENDING)
+  attempts            Int               @default(0)
+  lastError           String?
+  dispatchedAt        DateTime?
+  execution           WorkflowExecution @relation(fields: [workflowExecutionId], references: [id], onDelete: Cascade)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([status, createdAt])
+  @@index([workflowExecutionId])
+}
