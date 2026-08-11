@@ -103,6 +103,7 @@ GET  /api/workflows/:workflowId
 GET  /api/workflows/:workflowId/executions
 GET  /api/workflows/:workflowId/executions/:executionId
 POST /api/workflows/:workflowId/manual-runs
+DELETE /api/workflows/:workflowId
 ```
 
 ## Ingestion Service

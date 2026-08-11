@@ -217,6 +217,73 @@ workflowRouter.post("/:workflowId/manual-runs", async (req: AuthenticatedRequest
   }
 });
 
+workflowRouter.delete("/:workflowId", async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const workflow = await prisma.workflow.findFirst({
+      where: {
+        id: req.params.workflowId,
+        userId: req.userId,
+      },
+      select: { id: true },
+    });
+
+    if (!workflow) {
+      res.status(404).json({ message: "Workflow not found" });
+      return;
+    }
+
+    await prisma.$transaction(async (tx) => {
+      const executions = await tx.workflowExecution.findMany({
+        where: { workflowId: workflow.id },
+        select: { id: true },
+      });
+      const executionIds = executions.map((execution) => execution.id);
+
+      if (executionIds.length > 0) {
+        await tx.executionOutbox.deleteMany({
+          where: {
+            workflowExecutionId: {
+              in: executionIds,
+            },
+          },
+        });
+
+        await tx.executionStep.deleteMany({
+          where: {
+            workflowExecutionId: {
+              in: executionIds,
+            },
+          },
+        });
+
+        await tx.workflowExecution.deleteMany({
+          where: {
+            id: {
+              in: executionIds,
+            },
+          },
+        });
+      }
+
+      await tx.workflowStep.deleteMany({
+        where: { workflowId: workflow.id },
+      });
+
+      await tx.workflowTrigger.deleteMany({
+        where: { workflowId: workflow.id },
+      });
+
+      await tx.workflow.delete({
+        where: { id: workflow.id },
+      });
+    });
+
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
 workflowRouter.post("/", async (req: AuthenticatedRequest, res, next) => {
   try {
     const parsed = createWorkflowSchema.safeParse(req.body);
@@ -299,3 +366,4 @@ workflowRouter.post("/", async (req: AuthenticatedRequest, res, next) => {
 });
 
 class ProviderError extends Error {}
+

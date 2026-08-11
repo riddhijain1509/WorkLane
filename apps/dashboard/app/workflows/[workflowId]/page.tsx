@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Copy, Play, RefreshCw, Send } from "lucide-react";
+import { Copy, Play, RefreshCw, Send, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { redirectToSignInIfNeeded } from "@/lib/auth-redirect";
 import {
@@ -21,6 +21,7 @@ export default function WorkflowDetailPage() {
   const [executions, setExecutions] = useState<WorkflowExecution[]>([]);
   const [testPayload, setTestPayload] = useState('{\n  "event": {\n    "name": "Riddhi",\n    "source": "dashboard"\n  }\n}');
   const [error, setError] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const webhookUrl = useMemo(() => `${INGESTION_URL}/webhooks/${workflowId}`, [workflowId]);
   const triggerProviderId = getWorkflowTriggerProviderId(workflow);
@@ -76,6 +77,34 @@ export default function WorkflowDetailPage() {
     }
   }
 
+  async function deleteWorkflow() {
+    const confirmed = window.confirm(
+      `Delete "${workflow?.name ?? "this workflow"}"? This also removes its execution history.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setError("");
+    setDeleting(true);
+
+    try {
+      await apiFetch(`/api/workflows/${workflowId}`, {
+        method: "DELETE",
+      });
+      router.push("/dashboard");
+    } catch (caught) {
+      if (redirectToSignInIfNeeded(caught, router)) {
+        return;
+      }
+
+      setError(caught instanceof Error ? caught.message : "Unable to delete workflow");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <AppShell>
       <div className="page-header">
@@ -84,10 +113,16 @@ export default function WorkflowDetailPage() {
           <h1>{workflow?.name ?? "Loading workflow..."}</h1>
           <p className="muted">{workflow?.description}</p>
         </div>
-        <button className="btn secondary" onClick={load}>
-          <RefreshCw size={16} />
-          Refresh
-        </button>
+        <div className="nav">
+          <button className="btn secondary" onClick={load}>
+            <RefreshCw size={16} />
+            Refresh
+          </button>
+          <button className="btn danger" onClick={deleteWorkflow} disabled={deleting || !workflow}>
+            <Trash2 size={16} />
+            {deleting ? "Deleting..." : "Delete"}
+          </button>
+        </div>
       </div>
 
       {error && <div className="error">{error}</div>}
