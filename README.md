@@ -101,3 +101,15 @@ POST /webhooks/:workflowId
 ```
 
 When a webhook is received, ingestion creates a `WorkflowExecution`, queues each `ExecutionStep`, and writes the first pending `ExecutionOutbox` event for the dispatcher.
+
+## Dispatcher Service
+
+The dispatcher service lives in `services/dispatcher`.
+
+It continuously polls pending `ExecutionOutbox` rows, publishes them to the Kafka topic configured by `KAFKA_TOPIC`, and marks each row as dispatched.
+
+Useful script:
+
+```txt
+npm run dev:dispatcher
+```
