@@ -29,6 +29,16 @@ packages/
   shared/
 ```
 
+## Dashboard
+
+The dashboard app lives in `apps/dashboard` and runs on port `3000` by default.
+
+Useful script:
+
+```txt
+npm run dev:dashboard
+```
+
 ## Core Domain Terms
 
 - **Workflow**: an automation created by a user.
