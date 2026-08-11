@@ -28,6 +28,7 @@ export default function NewWorkflowPage() {
   const [name, setName] = useState("Webhook to log");
   const [description, setDescription] = useState("Records incoming webhook payloads in executor logs.");
   const [triggerProviderId, setTriggerProviderId] = useState("webhook.received");
+  const [intervalSeconds, setIntervalSeconds] = useState(60);
   const [stepDrafts, setStepDrafts] = useState<StepDraft[]>([
     {
       stepProviderId: "log.message",
@@ -82,7 +83,12 @@ export default function NewWorkflowPage() {
           name,
           description,
           triggerProviderId,
-          triggerConfig: {},
+          triggerConfig:
+            triggerProviderId === "schedule.interval"
+              ? {
+                  intervalSeconds,
+                }
+              : {},
           steps: parsedSteps,
         }),
       });
@@ -128,7 +134,20 @@ export default function NewWorkflowPage() {
             <select
               className="select"
               value={triggerProviderId}
-              onChange={(event) => setTriggerProviderId(event.target.value)}
+              onChange={(event) => {
+                const nextTriggerProviderId = event.target.value;
+                setTriggerProviderId(nextTriggerProviderId);
+
+                if (nextTriggerProviderId === "manual.run") {
+                  setName("Manual workflow");
+                  setDescription("Runs when started from the WorkLane dashboard.");
+                }
+
+                if (nextTriggerProviderId === "schedule.interval") {
+                  setName("Scheduled workflow");
+                  setDescription("Runs automatically on a fixed interval.");
+                }
+              }}
             >
               {triggers.map((trigger) => (
                 <option key={trigger.id} value={trigger.id}>
@@ -137,6 +156,22 @@ export default function NewWorkflowPage() {
               ))}
             </select>
           </div>
+          {triggerProviderId === "schedule.interval" && (
+            <div className="field">
+              <label>Run every</label>
+              <input
+                className="input"
+                type="number"
+                min={10}
+                step={5}
+                value={intervalSeconds}
+                onChange={(event) => setIntervalSeconds(Number(event.target.value))}
+              />
+              <p className="muted" style={{ marginBottom: 0 }}>
+                Seconds between scheduled runs. Minimum is 10 seconds.
+              </p>
+            </div>
+          )}
           <h2>Steps</h2>
           <div className="steps">
             {stepDrafts.map((step, index) => (
@@ -229,8 +264,9 @@ export default function NewWorkflowPage() {
             </p>
             <div className="code">{"{{event.name}}"}</div>
             <div className="code">{"{{event.source}}"}</div>
+            <div className="code">{"{{schedule.triggeredAt}}"}</div>
             <p className="muted">
-              With the default test payload, those become the sender name and source.
+              Webhook and manual runs use `event`. Scheduled runs also include `schedule`.
             </p>
           </div>
         </aside>

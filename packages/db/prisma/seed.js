@@ -25,6 +25,17 @@ async function main() {
     },
   });
 
+  await prisma.triggerProvider.upsert({
+    where: { id: "schedule.interval" },
+    update: {},
+    create: {
+      id: "schedule.interval",
+      name: "Schedule",
+      description: "Start a workflow repeatedly at a fixed time interval.",
+      iconUrl: "/providers/schedule.svg",
+    },
+  });
+
   await prisma.stepProvider.upsert({
     where: { id: "log.message" },
     update: {},

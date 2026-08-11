@@ -99,6 +99,14 @@ export default function WorkflowDetailPage() {
               <h2>Manual trigger</h2>
               <p className="muted">Start this workflow from WorkLane using the payload below.</p>
             </>
+          ) : triggerProviderId === "schedule.interval" ? (
+            <>
+              <h2>Schedule trigger</h2>
+              <p className="muted">
+                This workflow runs every {String(workflow?.trigger?.config?.intervalSeconds ?? 60)} seconds while
+                the scheduler service is running.
+              </p>
+            </>
           ) : (
             <>
               <div className="card-row">
@@ -127,16 +135,20 @@ export default function WorkflowDetailPage() {
             ))}
           </div>
 
-          <h2>{triggerProviderId === "manual.run" ? "Run payload" : "Test payload"}</h2>
-          <textarea
-            className="textarea"
-            value={testPayload}
-            onChange={(event) => setTestPayload(event.target.value)}
-          />
-          <button className="btn" onClick={sendTestWebhook}>
-            {triggerProviderId === "manual.run" ? <Play size={16} /> : <Send size={16} />}
-            {triggerProviderId === "manual.run" ? "Run workflow" : "Send test webhook"}
-          </button>
+          {triggerProviderId !== "schedule.interval" && (
+            <>
+              <h2>{triggerProviderId === "manual.run" ? "Run payload" : "Test payload"}</h2>
+              <textarea
+                className="textarea"
+                value={testPayload}
+                onChange={(event) => setTestPayload(event.target.value)}
+              />
+              <button className="btn" onClick={sendTestWebhook}>
+                {triggerProviderId === "manual.run" ? <Play size={16} /> : <Send size={16} />}
+                {triggerProviderId === "manual.run" ? "Run workflow" : "Send test webhook"}
+              </button>
+            </>
+          )}
         </section>
 
         <section className="panel">

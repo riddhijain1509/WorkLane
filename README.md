@@ -21,6 +21,7 @@ apps/
 services/
   control-plane/
   ingestion/
+  scheduler/
   dispatcher/
   executor/
 
@@ -53,6 +54,7 @@ npm run dev:dashboard
 
 - `webhook.received`: starts a workflow when an HTTP webhook is received.
 - `manual.run`: starts a workflow from the WorkLane dashboard.
+- `schedule.interval`: starts a workflow repeatedly at a fixed interval.
 
 ### Steps
 
@@ -126,6 +128,18 @@ Useful script:
 
 ```txt
 npm run dev:dispatcher
+```
+
+## Scheduler Service
+
+The scheduler service lives in `services/scheduler`.
+
+It checks active `schedule.interval` workflows and creates workflow executions when they are due.
+
+Useful script:
+
+```txt
+npm run dev:scheduler
 ```
 
 ## Executor Service

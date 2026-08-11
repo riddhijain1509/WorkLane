@@ -12,6 +12,7 @@
     "dev:dashboard": "npm --workspace apps/dashboard run dev",
     "dev:control": "npm --workspace services/control-plane run dev",
     "dev:ingestion": "npm --workspace services/ingestion run dev",
+    "dev:scheduler": "npm --workspace services/scheduler run dev",
     "dev:dispatcher": "npm --workspace services/dispatcher run dev",
     "dev:executor": "npm --workspace services/executor run dev",
     "db:generate": "npm --workspace packages/db run db:generate",
