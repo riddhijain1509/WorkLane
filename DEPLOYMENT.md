@@ -201,6 +201,8 @@ EXECUTOR_GROUP_ID="worklane-executor"
 
 SMTP_HOST="smtp.gmail.com"
 SMTP_PORT="587"
+SMTP_SECURE="false"
+SMTP_TIMEOUT_MS="15000"
 SMTP_USER="your-email@gmail.com"
 SMTP_PASS="your-app-password"
 SMTP_FROM="WorkLane <your-email@gmail.com>"
@@ -277,6 +279,8 @@ Optional SMTP variables for `email.send`:
 ```env
 SMTP_HOST="smtp.gmail.com"
 SMTP_PORT="587"
+SMTP_SECURE="false"
+SMTP_TIMEOUT_MS="15000"
 SMTP_USER="your-email@gmail.com"
 SMTP_PASS="your-app-password"
 SMTP_FROM="WorkLane <your-email@gmail.com>"

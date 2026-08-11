@@ -20,7 +20,10 @@ export async function runEmailSendStep(config: EmailConfig, payload: unknown) {
   const transporter = nodemailer.createTransport({
     host: appConfig.smtp.host,
     port: appConfig.smtp.port,
-    secure: appConfig.smtp.port === 465,
+    secure: appConfig.smtp.secure || appConfig.smtp.port === 465,
+    connectionTimeout: appConfig.smtp.timeoutMs,
+    greetingTimeout: appConfig.smtp.timeoutMs,
+    socketTimeout: appConfig.smtp.timeoutMs,
     auth: {
       user: appConfig.smtp.user,
       pass: appConfig.smtp.pass,
