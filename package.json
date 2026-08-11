@@ -17,6 +17,7 @@
     "dev:executor": "npm --workspace services/executor run dev",
     "db:generate": "npm --workspace packages/db run db:generate",
     "db:migrate": "npm --workspace packages/db run db:migrate",
+    "db:deploy": "npm --workspace packages/db run db:deploy",
     "db:seed": "npm --workspace packages/db run db:seed"
   },
   "engines": {

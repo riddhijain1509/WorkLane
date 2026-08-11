@@ -101,6 +101,8 @@ infra/
 
 ## Local Setup
 
+For production deployment, see [DEPLOYMENT.md](DEPLOYMENT.md).
+
 ### 1. Install Dependencies
 
 On Windows PowerShell, use `npm.cmd` if `npm` is blocked by execution policy.

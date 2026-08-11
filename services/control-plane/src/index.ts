@@ -7,7 +7,7 @@ import { providerRouter } from "./routes/providers";
 import { workflowRouter } from "./routes/workflows";
 
 const app = express();
-const port = Number(process.env.CONTROL_PLANE_PORT ?? 4000);
+const port = Number(process.env.PORT ?? process.env.CONTROL_PLANE_PORT ?? 4000);
 
 app.use(
   cors({

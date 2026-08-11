@@ -7,7 +7,7 @@ import {
   prisma,
   StepExecutionStatus,
 } from "@worklane/db";
-import { config } from "./config";
+import { config, kafkaClientConfig } from "./config";
 import { runStep } from "./steps";
 
 type WorkflowEventMessage = {
@@ -16,10 +16,7 @@ type WorkflowEventMessage = {
   stepPosition: number;
 };
 
-const kafka = new Kafka({
-  clientId: "worklane-executor",
-  brokers: config.kafkaBrokers,
-});
+const kafka = new Kafka(kafkaClientConfig("worklane-executor"));
 
 const consumer = kafka.consumer({ groupId: config.kafkaGroupId });
 

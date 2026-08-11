@@ -1,12 +1,9 @@
 import "dotenv/config";
 import { Kafka, Partitioners } from "kafkajs";
 import { OutboxStatus, prisma } from "@worklane/db";
-import { config } from "./config";
+import { config, kafkaClientConfig } from "./config";
 
-const kafka = new Kafka({
-  clientId: "worklane-dispatcher",
-  brokers: config.kafkaBrokers,
-});
+const kafka = new Kafka(kafkaClientConfig("worklane-dispatcher"));
 
 const admin = kafka.admin();
 const producer = kafka.producer({

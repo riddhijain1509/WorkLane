@@ -4,7 +4,7 @@ import express from "express";
 import { prisma, WorkflowStatus } from "@worklane/db";
 
 const app = express();
-const port = Number(process.env.INGESTION_PORT ?? 4001);
+const port = Number(process.env.PORT ?? process.env.INGESTION_PORT ?? 4001);
 
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
