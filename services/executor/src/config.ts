@@ -1,4 +1,5 @@
 import type { KafkaConfig, SASLOptions } from "kafkajs";
+import type { ConnectionOptions } from "node:tls";
 
 function buildKafkaSasl(): SASLOptions | undefined {
   const username = process.env.KAFKA_USERNAME;
@@ -23,7 +24,7 @@ export const config = {
     .split(",")
     .map((broker) => broker.trim())
     .filter(Boolean),
-  kafkaSsl: process.env.KAFKA_SSL === "true",
+  kafkaSsl: buildKafkaSsl(),
   kafkaSasl: buildKafkaSasl(),
   kafkaTopic: process.env.KAFKA_TOPIC ?? "workflow-events",
   kafkaGroupId: process.env.EXECUTOR_GROUP_ID ?? "worklane-executor",
@@ -35,6 +36,22 @@ export const config = {
     from: process.env.SMTP_FROM ?? "WorkLane <no-reply@worklane.local>",
   },
 };
+
+function buildKafkaSsl(): boolean | ConnectionOptions {
+  if (process.env.KAFKA_SSL !== "true") {
+    return false;
+  }
+
+  const ca = process.env.KAFKA_CA_CERT?.replace(/\\n/g, "\n");
+  if (!ca) {
+    return true;
+  }
+
+  return {
+    ca: [ca],
+    rejectUnauthorized: true,
+  };
+}
 
 export function kafkaClientConfig(clientId: string): KafkaConfig {
   return {
