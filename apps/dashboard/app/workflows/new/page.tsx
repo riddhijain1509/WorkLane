@@ -10,7 +10,15 @@ import { Provider, apiFetch } from "@/lib/api";
 type StepDraft = {
   stepProviderId: string;
   name: string;
-  configText: string;
+  config: {
+    message?: string;
+    to?: string;
+    subject?: string;
+    body?: string;
+    url?: string;
+    method?: string;
+    headers?: string;
+  };
 };
 
 export default function NewWorkflowPage() {
@@ -24,7 +32,9 @@ export default function NewWorkflowPage() {
     {
       stepProviderId: "log.message",
       name: "Log incoming event",
-      configText: '{\n  "message": "Received payload for {{event.name}}"\n}',
+      config: {
+        message: "Received payload for {{event.name}}",
+      },
     },
   ]);
   const [error, setError] = useState("");
@@ -63,7 +73,7 @@ export default function NewWorkflowPage() {
       const parsedSteps = stepDrafts.map((step) => ({
         stepProviderId: step.stepProviderId,
         name: step.name,
-        config: JSON.parse(step.configText) as Record<string, unknown>,
+        config: buildStepConfig(step),
       }));
 
       const response = await apiFetch<{ workflow: { id: string } }>("/api/workflows", {
@@ -149,7 +159,14 @@ export default function NewWorkflowPage() {
                     <select
                       className="select"
                       value={step.stepProviderId}
-                      onChange={(event) => updateStep(index, { stepProviderId: event.target.value })}
+                      onChange={(event) => {
+                        const stepProviderId = event.target.value;
+                        updateStep(index, {
+                          stepProviderId,
+                          name: defaultStepName(stepProviderId),
+                          config: defaultStepConfig(stepProviderId),
+                        });
+                      }}
                     >
                       {steps.map((provider) => (
                         <option key={provider.id} value={provider.id}>
@@ -166,14 +183,17 @@ export default function NewWorkflowPage() {
                       onChange={(event) => updateStep(index, { name: event.target.value })}
                     />
                   </div>
-                  <div className="field">
-                    <label>Config JSON</label>
-                    <textarea
-                      className="textarea"
-                      value={step.configText}
-                      onChange={(event) => updateStep(index, { configText: event.target.value })}
-                    />
-                  </div>
+                  <StepConfigFields
+                    step={step}
+                    onChange={(config) =>
+                      updateStep(index, {
+                        config: {
+                          ...step.config,
+                          ...config,
+                        },
+                      })
+                    }
+                  />
                 </div>
               </div>
             ))}
@@ -186,8 +206,8 @@ export default function NewWorkflowPage() {
                 ...current,
                 {
                   stepProviderId: "log.message",
-                  name: "Next step",
-                  configText: '{\n  "message": "Next step for {{event.name}}"\n}',
+                  name: "Log message",
+                  config: defaultStepConfig("log.message"),
                 },
               ])
             }
@@ -202,25 +222,177 @@ export default function NewWorkflowPage() {
         </section>
 
         <aside className="panel">
-          <h2>Config examples</h2>
+          <h2>Template data</h2>
           <div className="stack">
-            <div>
-              <h3>Log message</h3>
-              <div className="code">{'{ "message": "Received {{event.name}}" }'}</div>
-            </div>
-            <div>
-              <h3>Email</h3>
-              <div className="code">
-                {'{ "to": "you@example.com", "subject": "New event", "body": "Hi {{event.name}}" }'}
-              </div>
-            </div>
-            <div>
-              <h3>HTTP request</h3>
-              <div className="code">{'{ "url": "https://example.com", "method": "POST" }'}</div>
-            </div>
+            <p className="muted">
+              Step fields can use values from the incoming webhook payload.
+            </p>
+            <div className="code">{"{{event.name}}"}</div>
+            <div className="code">{"{{event.source}}"}</div>
+            <p className="muted">
+              With the default test payload, those become the sender name and source.
+            </p>
           </div>
         </aside>
       </form>
     </AppShell>
   );
+}
+
+function StepConfigFields({
+  step,
+  onChange,
+}: {
+  step: StepDraft;
+  onChange: (config: Partial<StepDraft["config"]>) => void;
+}) {
+  if (step.stepProviderId === "email.send") {
+    return (
+      <>
+        <div className="field">
+          <label>Send to</label>
+          <input
+            className="input"
+            type="email"
+            placeholder="you@example.com"
+            value={step.config.to ?? ""}
+            onChange={(event) => onChange({ to: event.target.value })}
+            required
+          />
+        </div>
+        <div className="field">
+          <label>Subject</label>
+          <input
+            className="input"
+            value={step.config.subject ?? ""}
+            onChange={(event) => onChange({ subject: event.target.value })}
+          />
+        </div>
+        <div className="field">
+          <label>Email body</label>
+          <textarea
+            className="textarea"
+            value={step.config.body ?? ""}
+            onChange={(event) => onChange({ body: event.target.value })}
+          />
+        </div>
+      </>
+    );
+  }
+
+  if (step.stepProviderId === "http.request") {
+    return (
+      <>
+        <div className="field">
+          <label>Request URL</label>
+          <input
+            className="input"
+            type="url"
+            placeholder="https://httpbin.org/post"
+            value={step.config.url ?? ""}
+            onChange={(event) => onChange({ url: event.target.value })}
+            required
+          />
+        </div>
+        <div className="field">
+          <label>Method</label>
+          <select
+            className="select"
+            value={step.config.method ?? "POST"}
+            onChange={(event) => onChange({ method: event.target.value })}
+          >
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="PATCH">PATCH</option>
+            <option value="GET">GET</option>
+          </select>
+        </div>
+        <div className="field">
+          <label>Request body</label>
+          <textarea
+            className="textarea"
+            value={step.config.body ?? ""}
+            onChange={(event) => onChange({ body: event.target.value })}
+          />
+        </div>
+        <div className="field">
+          <label>Headers JSON</label>
+          <textarea
+            className="textarea"
+            value={step.config.headers ?? ""}
+            onChange={(event) => onChange({ headers: event.target.value })}
+          />
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <div className="field">
+      <label>Message</label>
+      <textarea
+        className="textarea"
+        value={step.config.message ?? ""}
+        onChange={(event) => onChange({ message: event.target.value })}
+      />
+    </div>
+  );
+}
+
+function defaultStepName(stepProviderId: string) {
+  if (stepProviderId === "email.send") {
+    return "Send email";
+  }
+
+  if (stepProviderId === "http.request") {
+    return "Call API";
+  }
+
+  return "Log message";
+}
+
+function defaultStepConfig(stepProviderId: string): StepDraft["config"] {
+  if (stepProviderId === "email.send") {
+    return {
+      to: "",
+      subject: "WorkLane event for {{event.name}}",
+      body: "Hello, WorkLane received an event from {{event.source}}.",
+    };
+  }
+
+  if (stepProviderId === "http.request") {
+    return {
+      url: "https://httpbin.org/post",
+      method: "POST",
+      body: '{"name":"{{event.name}}","source":"{{event.source}}","sentFrom":"WorkLane"}',
+      headers: '{\n  "Content-Type": "application/json"\n}',
+    };
+  }
+
+  return {
+    message: "Received payload for {{event.name}}",
+  };
+}
+
+function buildStepConfig(step: StepDraft) {
+  if (step.stepProviderId === "email.send") {
+    return {
+      to: step.config.to,
+      subject: step.config.subject,
+      body: step.config.body,
+    };
+  }
+
+  if (step.stepProviderId === "http.request") {
+    return {
+      url: step.config.url,
+      method: step.config.method,
+      body: step.config.body,
+      headers: step.config.headers ? JSON.parse(step.config.headers) : undefined,
+    };
+  }
+
+  return {
+    message: step.config.message,
+  };
 }

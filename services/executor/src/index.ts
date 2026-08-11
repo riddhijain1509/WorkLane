@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./load-env";
 import { Kafka } from "kafkajs";
 import {
   ExecutionStatus,
