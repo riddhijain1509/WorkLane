@@ -1,179 +1,310 @@
 # WorkLane
 
-WorkLane is a distributed workflow automation platform with webhook triggers, queued dispatching, and worker-executed integration steps.
+WorkLane is a distributed workflow automation platform inspired by tools like Zapier, but built with a backend architecture that demonstrates real production concepts: workflow definitions, webhook ingestion, a transactional outbox, Kafka dispatching, scheduled runs, and worker-executed steps.
+
+The project is intentionally built as a monorepo so each part of the system has a clear responsibility and can later be scaled or extended independently.
+
+## Features
+
+- User signup, login, logout, and session-based authentication.
+- Workflow creation from a dashboard UI.
+- Webhook, manual, and scheduled triggers.
+- Step-based execution model.
+- Execution history with per-step status.
+- Transactional outbox pattern for reliable dispatching.
+- Kafka-based communication between dispatcher and executor.
+- SMTP email step support.
+- HTTP request step support.
+- Retro-styled landing page and dashboard UI.
 
 ## Architecture
 
-- **Dashboard**: frontend for creating workflows and viewing runs.
-- **Control Plane**: main API for auth, workflow definitions, and provider metadata.
-- **Ingestion**: receives incoming webhook events and records workflow executions.
-- **Dispatcher**: reads pending execution outbox rows and publishes Kafka messages.
-- **Executor**: consumes Kafka messages and runs workflow steps in order.
-- **Database**: PostgreSQL with Prisma.
-- **Messaging**: Kafka.
+```txt
+Dashboard
+   |
+   v
+Control Plane API  -----> PostgreSQL
+   |                         ^
+   |                         |
+   v                         |
+Ingestion Service -----> Execution Outbox
+                             |
+                             v
+                         Dispatcher
+                             |
+                             v
+                           Kafka
+                             |
+                             v
+                          Executor
+                             |
+                             v
+                    Execution Step Updates
+```
+
+### Main Services
+
+- **Dashboard**: Next.js frontend for landing page, auth, workflow creation, and run monitoring.
+- **Control Plane**: API for users, workflow definitions, providers, manual runs, and deletion.
+- **Ingestion**: Receives webhook calls and creates workflow executions.
+- **Scheduler**: Polls scheduled workflows and creates executions when they are due.
+- **Dispatcher**: Reads pending outbox records and publishes execution events to Kafka.
+- **Executor**: Consumes Kafka events and runs workflow steps in order.
+- **Database**: PostgreSQL managed through Prisma.
+- **Messaging**: Kafka running locally through Docker Compose.
 
 ## Monorepo Layout
 
 ```txt
 apps/
-  dashboard/
+  dashboard/              Next.js frontend
 
 services/
-  control-plane/
-  ingestion/
-  scheduler/
-  dispatcher/
-  executor/
+  control-plane/          Auth, providers, workflows, manual runs
+  ingestion/              Webhook entry point
+  scheduler/              Scheduled trigger poller
+  dispatcher/             Outbox to Kafka publisher
+  executor/               Kafka consumer and step runner
 
 packages/
-  db/
-  shared/
+  db/                     Prisma schema, migrations, seed data
+  shared/                 Shared TypeScript types/helpers
+
+infra/
+  docker-compose.yml      Local Kafka setup
 ```
 
-## Dashboard
+## Tech Stack
 
-The dashboard app lives in `apps/dashboard` and runs on port `3000` by default.
+- **Frontend**: Next.js, React, TypeScript
+- **Backend**: Node.js, Express, TypeScript
+- **Database**: PostgreSQL, Prisma
+- **Messaging**: Kafka, KafkaJS
+- **Email**: Nodemailer with SMTP
+- **Local Infra**: Docker Compose
 
-Useful script:
+## Local Setup
 
-```txt
-npm run dev:dashboard
+### 1. Install Dependencies
+
+On Windows PowerShell, use `npm.cmd` if `npm` is blocked by execution policy.
+
+```powershell
+npm.cmd install
 ```
 
-## Core Domain Terms
+### 2. Create Environment File
 
-- **Workflow**: an automation created by a user.
-- **Trigger**: the event that starts a workflow.
-- **Step**: one action inside a workflow.
-- **Execution**: one run of a workflow.
-- **ExecutionOutbox**: pending execution events waiting to be dispatched.
+Copy `.env.example` to `.env` and update values for your local machine.
 
-## Version 1 Providers
-
-### Triggers
-
-- `webhook.received`: starts a workflow when an HTTP webhook is received.
-- `manual.run`: starts a workflow from the WorkLane dashboard.
-- `schedule.interval`: starts a workflow repeatedly at a fixed interval.
-
-### Steps
-
-- `log.message`: writes a message to executor logs.
-- `email.send`: sends an email through SMTP.
-- `http.request`: calls an external API.
-
-## Database Package
-
-The shared Prisma package lives in `packages/db`.
-
-```txt
-packages/db/
-  prisma/
-    schema.prisma
-    seed.ts
-  src/
-    index.ts
+```powershell
+Copy-Item .env.example .env
 ```
 
-Useful scripts:
+Minimum required values:
 
-```txt
-npm run db:generate
-npm run db:migrate
-npm run db:seed
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/worklane"
+JWT_SECRET="replace-with-a-long-random-secret"
+
+KAFKA_BROKERS="localhost:9092"
+KAFKA_TOPIC="workflow-events"
+
+CONTROL_PLANE_PORT="4000"
+INGESTION_PORT="4001"
+
+NEXT_PUBLIC_CONTROL_PLANE_URL="http://localhost:4000"
+NEXT_PUBLIC_INGESTION_URL="http://localhost:4001"
 ```
 
-## Control Plane API
+Optional SMTP values for `email.send`:
 
-The control-plane service lives in `services/control-plane` and runs on port `4000` by default.
+```env
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="your-email@gmail.com"
+SMTP_PASS="your-app-password"
+SMTP_FROM="WorkLane <your-email@gmail.com>"
+```
 
-Main endpoints:
+Do not commit real SMTP credentials.
+
+### 3. Set Up PostgreSQL
+
+Create a local PostgreSQL database named `worklane`.
+
+Example using `createdb`:
+
+```powershell
+createdb -h localhost -p 5432 -U postgres worklane
+```
+
+If `createdb` is not in your PATH on Windows, run it with the full PostgreSQL path:
+
+```powershell
+& "C:\Program Files\PostgreSQL\18\bin\createdb.exe" -h localhost -p 5432 -U postgres worklane
+```
+
+### 4. Generate, Migrate, and Seed Database
+
+```powershell
+npm.cmd run db:generate
+npm.cmd run db:migrate
+npm.cmd run db:seed
+```
+
+Seed data creates the first version of trigger and step providers.
+
+### 5. Start Kafka
+
+Docker Desktop must be running.
+
+```powershell
+docker compose -f infra/docker-compose.yml up -d
+```
+
+Check that Kafka is running:
+
+```powershell
+docker ps
+```
+
+### 6. Start Services
+
+Open separate terminals for each service.
+
+```powershell
+npm.cmd run dev:control
+npm.cmd run dev:ingestion
+npm.cmd run dev:dispatcher
+npm.cmd run dev:executor
+npm.cmd run dev:scheduler
+npm.cmd run dev:dashboard
+```
+
+Default local URLs:
 
 ```txt
-GET  /health
-POST /api/auth/signup
-POST /api/auth/login
-POST /api/auth/logout
-GET  /api/auth/me
-GET  /api/providers/triggers
-GET  /api/providers/steps
-GET  /api/workflows
-POST /api/workflows
-GET  /api/workflows/:workflowId
-GET  /api/workflows/:workflowId/executions
-GET  /api/workflows/:workflowId/executions/:executionId
-POST /api/workflows/:workflowId/manual-runs
+Dashboard:      http://localhost:3000
+Control Plane:  http://localhost:4000
+Ingestion:      http://localhost:4001
+Kafka:          localhost:9092
+```
+
+## Supported Triggers
+
+### `webhook.received`
+
+Starts a workflow when an HTTP request is sent to the workflow webhook URL.
+
+Example:
+
+```powershell
+Invoke-RestMethod `
+  -Uri "http://localhost:4001/webhooks/<workflow-id>" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body '{"event":{"name":"Riddhi","source":"test"}}'
+```
+
+### `manual.run`
+
+Starts a workflow from the dashboard by clicking the run button on a manual workflow.
+
+### `schedule.interval`
+
+Starts a workflow repeatedly based on `intervalSeconds` in the trigger config.
+
+Example trigger config:
+
+```json
+{
+  "intervalSeconds": 60
+}
+```
+
+## Supported Steps
+
+### `log.message`
+
+Writes a configured message to the executor logs.
+
+Example config:
+
+```json
+{
+  "message": "Received event from {{event.source}}"
+}
+```
+
+### `email.send`
+
+Sends an email through the SMTP settings in `.env`.
+
+Example config:
+
+```json
+{
+  "to": "recipient@example.com",
+  "subject": "WorkLane notification",
+  "body": "A workflow was triggered by {{event.source}}."
+}
+```
+
+### `http.request`
+
+Calls an external API.
+
+Example config:
+
+```json
+{
+  "url": "https://example.com/api/events",
+  "method": "POST",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"name\":\"{{event.name}}\"}"
+}
+```
+
+## API Reference
+
+### Control Plane
+
+```txt
+GET    /health
+POST   /api/auth/signup
+POST   /api/auth/login
+POST   /api/auth/logout
+GET    /api/auth/me
+GET    /api/providers/triggers
+GET    /api/providers/steps
+GET    /api/workflows
+POST   /api/workflows
+GET    /api/workflows/:workflowId
+GET    /api/workflows/:workflowId/executions
+GET    /api/workflows/:workflowId/executions/:executionId
+POST   /api/workflows/:workflowId/manual-runs
 DELETE /api/workflows/:workflowId
 ```
 
-## Ingestion Service
-
-The ingestion service lives in `services/ingestion` and runs on port `4001` by default.
-
-Main endpoints:
+### Ingestion
 
 ```txt
 GET  /health
 POST /webhooks/:workflowId
 ```
 
-When a webhook is received, ingestion creates a `WorkflowExecution`, queues each `ExecutionStep`, and writes the first pending `ExecutionOutbox` event for the dispatcher.
+## Testing the Happy Path
 
-## Dispatcher Service
+1. Start PostgreSQL and Kafka.
+2. Start `control-plane`, `ingestion`, `dispatcher`, `executor`, and `dashboard`.
+3. Create an account at `http://localhost:3000/signup`.
+4. Create a workflow.
+5. Choose a trigger:
+   - Webhook: send a test webhook from the detail page.
+   - Manual: click the run workflow button.
+   - Schedule: wait for the scheduler interval.
+6. Watch execution history update on the workflow detail page.
 
-The dispatcher service lives in `services/dispatcher`.
-
-It continuously polls pending `ExecutionOutbox` rows, publishes them to the Kafka topic configured by `KAFKA_TOPIC`, and marks each row as dispatched.
-
-Useful script:
-
-```txt
-npm run dev:dispatcher
-```
-
-## Scheduler Service
-
-The scheduler service lives in `services/scheduler`.
-
-It checks active `schedule.interval` workflows and creates workflow executions when they are due.
-
-Useful script:
-
-```txt
-npm run dev:scheduler
-```
-
-## Executor Service
-
-The executor service lives in `services/executor`.
-
-It consumes Kafka workflow events, runs the matching `ExecutionStep`, marks the step as succeeded or failed, and queues the next step through `ExecutionOutbox` when the workflow has more work.
-
-Supported step providers:
-
-```txt
-log.message
-email.send
-http.request
-```
-
-Useful script:
-
-```txt
-npm run dev:executor
-```
-
-## Local Kafka
-
-Kafka can be started locally with Docker Compose:
-
-```txt
-docker compose -f infra/docker-compose.yml up -d
-```
-
-The dispatcher and executor use:
-
-```txt
-KAFKA_BROKERS="localhost:9092"
-KAFKA_TOPIC="workflow-events"
-```
