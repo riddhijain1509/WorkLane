@@ -87,6 +87,8 @@ GET  /api/providers/steps
 GET  /api/workflows
 POST /api/workflows
 GET  /api/workflows/:workflowId
+GET  /api/workflows/:workflowId/executions
+GET  /api/workflows/:workflowId/executions/:executionId
 ```
 
 ## Ingestion Service

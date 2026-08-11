@@ -81,6 +81,92 @@ workflowRouter.get("/:workflowId", async (req: AuthenticatedRequest, res, next) 
   }
 });
 
+workflowRouter.get("/:workflowId/executions", async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const workflow = await prisma.workflow.findFirst({
+      where: {
+        id: req.params.workflowId,
+        userId: req.userId,
+      },
+      select: { id: true },
+    });
+
+    if (!workflow) {
+      res.status(404).json({ message: "Workflow not found" });
+      return;
+    }
+
+    const executions = await prisma.workflowExecution.findMany({
+      where: { workflowId: workflow.id },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: {
+        steps: {
+          orderBy: { position: "asc" },
+          include: {
+            workflowStep: {
+              include: { provider: true },
+            },
+          },
+        },
+        outboxEvents: {
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    res.json({ executions });
+  } catch (error) {
+    next(error);
+  }
+});
+
+workflowRouter.get(
+  "/:workflowId/executions/:executionId",
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const execution = await prisma.workflowExecution.findFirst({
+        where: {
+          id: req.params.executionId,
+          workflowId: req.params.workflowId,
+          workflow: {
+            userId: req.userId,
+          },
+        },
+        include: {
+          workflow: {
+            select: {
+              id: true,
+              name: true,
+              status: true,
+            },
+          },
+          steps: {
+            orderBy: { position: "asc" },
+            include: {
+              workflowStep: {
+                include: { provider: true },
+              },
+            },
+          },
+          outboxEvents: {
+            orderBy: { createdAt: "desc" },
+          },
+        },
+      });
+
+      if (!execution) {
+        res.status(404).json({ message: "Execution not found" });
+        return;
+      }
+
+      res.json({ execution });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
 workflowRouter.post("/", async (req: AuthenticatedRequest, res, next) => {
   try {
     const parsed = createWorkflowSchema.safeParse(req.body);
