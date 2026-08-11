@@ -88,3 +88,16 @@ GET  /api/workflows
 POST /api/workflows
 GET  /api/workflows/:workflowId
 ```
+
+## Ingestion Service
+
+The ingestion service lives in `services/ingestion` and runs on port `4001` by default.
+
+Main endpoints:
+
+```txt
+GET  /health
+POST /webhooks/:workflowId
+```
+
+When a webhook is received, ingestion creates a `WorkflowExecution`, queues each `ExecutionStep`, and writes the first pending `ExecutionOutbox` event for the dispatcher.
