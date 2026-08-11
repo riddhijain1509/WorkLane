@@ -69,3 +69,22 @@ npm run db:generate
 npm run db:migrate
 npm run db:seed
 ```
+
+## Control Plane API
+
+The control-plane service lives in `services/control-plane` and runs on port `4000` by default.
+
+Main endpoints:
+
+```txt
+GET  /health
+POST /api/auth/signup
+POST /api/auth/login
+POST /api/auth/logout
+GET  /api/auth/me
+GET  /api/providers/triggers
+GET  /api/providers/steps
+GET  /api/workflows
+POST /api/workflows
+GET  /api/workflows/:workflowId
+```
