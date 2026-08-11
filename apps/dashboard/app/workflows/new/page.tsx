@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { redirectToSignInIfNeeded } from "@/lib/auth-redirect";
 import { Provider, apiFetch } from "@/lib/api";
 
 type StepDraft = {
@@ -38,8 +39,14 @@ export default function NewWorkflowPage() {
         setTriggers(triggerData.triggers);
         setSteps(stepData.steps);
       })
-      .catch((caught) => setError(caught instanceof Error ? caught.message : "Unable to load providers"));
-  }, []);
+      .catch((caught) => {
+        if (redirectToSignInIfNeeded(caught, router)) {
+          return;
+        }
+
+        setError(caught instanceof Error ? caught.message : "Unable to load providers");
+      });
+  }, [router]);
 
   function updateStep(index: number, patch: Partial<StepDraft>) {
     setStepDrafts((current) =>
@@ -72,6 +79,10 @@ export default function NewWorkflowPage() {
 
       router.push(`/workflows/${response.workflow.id}`);
     } catch (caught) {
+      if (redirectToSignInIfNeeded(caught, router)) {
+        return;
+      }
+
       setError(caught instanceof Error ? caught.message : "Unable to create workflow");
     } finally {
       setSaving(false);

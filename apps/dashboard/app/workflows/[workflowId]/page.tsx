@@ -1,12 +1,14 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Copy, RefreshCw, Send } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { redirectToSignInIfNeeded } from "@/lib/auth-redirect";
 import { INGESTION_URL, Workflow, WorkflowExecution, apiFetch } from "@/lib/api";
 
 export default function WorkflowDetailPage() {
+  const router = useRouter();
   const params = useParams<{ workflowId: string }>();
   const workflowId = params.workflowId;
   const [workflow, setWorkflow] = useState<Workflow | null>(null);
@@ -26,6 +28,10 @@ export default function WorkflowDetailPage() {
       setWorkflow(workflowData.workflow);
       setExecutions(executionData.executions);
     } catch (caught) {
+      if (redirectToSignInIfNeeded(caught, router)) {
+        return;
+      }
+
       setError(caught instanceof Error ? caught.message : "Unable to load workflow");
     }
   }

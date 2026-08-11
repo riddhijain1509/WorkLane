@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Clock, GitBranch, Plus, Radio } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { redirectToSignInIfNeeded } from "@/lib/auth-redirect";
 import { INGESTION_URL, Workflow, apiFetch } from "@/lib/api";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -14,9 +17,15 @@ export default function DashboardPage() {
   useEffect(() => {
     apiFetch<{ workflows: Workflow[] }>("/api/workflows")
       .then((data) => setWorkflows(data.workflows))
-      .catch((caught) => setError(caught instanceof Error ? caught.message : "Unable to load workflows"))
+      .catch((caught) => {
+        if (redirectToSignInIfNeeded(caught, router)) {
+          return;
+        }
+
+        setError(caught instanceof Error ? caught.message : "Unable to load workflows");
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [router]);
 
   return (
     <AppShell>
