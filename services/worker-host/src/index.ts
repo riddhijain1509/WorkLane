@@ -1,5 +1,7 @@
 import { createServer } from "node:http";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { existsSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 
 type WorkerDefinition = {
   name: string;
@@ -14,12 +16,13 @@ const workers: WorkerDefinition[] = [
 
 const port = Number(process.env.PORT ?? 4010);
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+const workspaceRoot = findWorkspaceRoot();
 const childProcesses: ChildProcessWithoutNullStreams[] = [];
 let shuttingDown = false;
 
 function startWorker(worker: WorkerDefinition) {
   const child = spawn(npmCommand, ["--workspace", worker.workspace, "run", "start"], {
-    cwd: process.cwd(),
+    cwd: workspaceRoot,
     env: process.env,
     stdio: "pipe",
   });
@@ -81,3 +84,29 @@ function shutdown(signal: string) {
 
 process.on("SIGINT", () => shutdown("SIGINT"));
 process.on("SIGTERM", () => shutdown("SIGTERM"));
+
+function findWorkspaceRoot() {
+  const candidates = [
+    process.env.INIT_CWD,
+    process.cwd(),
+    dirname(__dirname),
+    resolve(__dirname, "../../.."),
+  ].filter(Boolean) as string[];
+
+  for (const candidate of candidates) {
+    let current = resolve(candidate);
+
+    while (dirname(current) !== current) {
+      if (
+        existsSync(join(current, "package.json")) &&
+        existsSync(join(current, "services", "dispatcher", "package.json"))
+      ) {
+        return current;
+      }
+
+      current = dirname(current);
+    }
+  }
+
+  return process.cwd();
+}
