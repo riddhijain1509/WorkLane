@@ -136,6 +136,8 @@ DATABASE_URL="your-managed-postgres-url"
 
 Render service type: **Background Worker**
 
+Render background workers do not have a free tier. For a free demo deployment, skip the separate dispatcher, executor, and scheduler worker services and use the [Free Tier Worker Host](#free-tier-worker-host) section instead.
+
 Build command:
 
 ```bash
@@ -221,6 +223,64 @@ Environment variables:
 DATABASE_URL="your-managed-postgres-url"
 SCHEDULER_POLL_INTERVAL_MS="5000"
 ```
+
+## Free Tier Worker Host
+
+If you do not want to pay for Render background workers, deploy one normal Render **Web Service** that runs all three worker processes and exposes a small `/health` endpoint.
+
+Render service type: **Web Service**
+
+Name:
+
+```txt
+worklane-worker-host
+```
+
+Build command:
+
+```bash
+npm install && npm run db:generate && npm --workspace packages/db run build && npm --workspace services/dispatcher run build && npm --workspace services/executor run build && npm --workspace services/scheduler run build && npm --workspace services/worker-host run build
+```
+
+Start command:
+
+```bash
+npm --workspace services/worker-host run start
+```
+
+Environment variables:
+
+```env
+DATABASE_URL="your-managed-postgres-url"
+KAFKA_BROKERS="host:port"
+KAFKA_TOPIC="workflow-events"
+KAFKA_SSL="true"
+KAFKA_USERNAME="your-kafka-username"
+KAFKA_PASSWORD="your-kafka-password"
+KAFKA_SASL_MECHANISM="plain"
+EXECUTOR_GROUP_ID="worklane-executor"
+DISPATCHER_POLL_INTERVAL_MS="3000"
+DISPATCHER_BATCH_SIZE="10"
+SCHEDULER_POLL_INTERVAL_MS="5000"
+```
+
+Optional SMTP variables for `email.send`:
+
+```env
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="your-email@gmail.com"
+SMTP_PASS="your-app-password"
+SMTP_FROM="WorkLane <your-email@gmail.com>"
+```
+
+Health check:
+
+```txt
+https://worklane-worker-host.onrender.com/health
+```
+
+Important limitation: Render free web services can sleep when inactive. When this service is asleep, workflow executions will not be processed until it wakes up again.
 
 ## Kafka Topic
 

@@ -15,6 +15,7 @@
     "dev:scheduler": "npm --workspace services/scheduler run dev",
     "dev:dispatcher": "npm --workspace services/dispatcher run dev",
     "dev:executor": "npm --workspace services/executor run dev",
+    "start:worker-host": "npm --workspace services/worker-host run start",
     "db:generate": "npm --workspace packages/db run db:generate",
     "db:migrate": "npm --workspace packages/db run db:migrate",
     "db:deploy": "npm --workspace packages/db run db:deploy",
