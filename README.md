@@ -113,3 +113,18 @@ Useful script:
 ```txt
 npm run dev:dispatcher
 ```
+
+## Local Kafka
+
+Kafka can be started locally with Docker Compose:
+
+```txt
+docker compose -f infra/docker-compose.yml up -d
+```
+
+The dispatcher and executor use:
+
+```txt
+KAFKA_BROKERS="localhost:9092"
+KAFKA_TOPIC="workflow-events"
+```
